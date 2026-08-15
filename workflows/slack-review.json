@@ -1,0 +1,184 @@
+{
+  "connections": {
+    "Apply review": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Was it still pending?",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Build updated message": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Update Slack message",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Parse Slack action": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Apply review",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Slack review webhook": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Parse Slack action",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Was it still pending?": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Build updated message",
+            "type": "main"
+          }
+        ],
+        []
+      ]
+    }
+  },
+  "name": "slack review",
+  "nodes": [
+    {
+      "id": "5d4d5cea-db6c-42dc-8bc0-c7d1e46bf555",
+      "name": "Slack review webhook",
+      "parameters": {
+        "httpMethod": "POST",
+        "options": {},
+        "path": "slack-review",
+        "responseMode": "onReceived"
+      },
+      "position": [
+        0,
+        0
+      ],
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "webhookId": "57dcb878-964b-4462-9e70-76e86709ab24"
+    },
+    {
+      "id": "3e234339-7d45-46e8-90e3-2e5a26f692a3",
+      "name": "Parse Slack action",
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body ?? {};\nlet payload = body.payload;\nif (typeof payload === 'string') payload = JSON.parse(payload);\n\nconst action = (payload.actions || [])[0] || {};\n\nconst DECISIONS = { approve_breach: 'approved', reject_breach: 'rejected' };\nconst decision = DECISIONS[action.action_id];\nif (!decision) {\n  throw new Error(`Unsupported action_id: ${action.action_id}`);\n}\n\nconst findingId = Number.parseInt(action.value, 10);\nif (!Number.isInteger(findingId) || findingId <= 0) {\n  throw new Error(`Missing or invalid finding_id in button value: ${action.value}`);\n}\n\nreturn [{\n  json: {\n    finding_id: findingId,\n    decision,\n    reviewer: payload.user?.id ?? '',\n    reviewer_name: payload.user?.username ?? payload.user?.name ?? '',\n    response_url: payload.response_url ?? '',\n    channel: payload.channel?.id ?? '',\n    message_ts: payload.message?.ts ?? '',\n    original_blocks: payload.message?.blocks ?? [],\n  },\n}];"
+      },
+      "position": [
+        220,
+        0
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "credentials": {
+        "postgres": {
+          "id": "GQ2SoZByCmg7fQjq",
+          "name": "Postgres account 2"
+        }
+      },
+      "id": "bb317ae0-0c7b-4f52-b3be-043ad8480a73",
+      "name": "Apply review",
+      "parameters": {
+        "operation": "executeQuery",
+        "options": {
+          "queryReplacement": "={{ [$json.decision, $json.reviewer, $json.finding_id] }}"
+        },
+        "query": "WITH upd AS (\n    UPDATE findings\n    SET review_status = $1::review_status,\n        reviewed_at   = NOW(),\n        reviewed_by   = $2,\n        updated_at    = NOW()\n    WHERE id = $3::bigint\n      AND review_status = 'pending'\n    RETURNING id, review_status\n)\nSELECT (SELECT id FROM upd) IS NOT NULL     AS updated,\n       (SELECT id FROM upd)                 AS finding_id,\n       (SELECT review_status FROM upd)      AS review_status;"
+      },
+      "position": [
+        440,
+        0
+      ],
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7
+    },
+    {
+      "id": "f7046e23-e544-4762-a9f3-660739afffcf",
+      "name": "Was it still pending?",
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "785783ee-ec30-4c69-8da7-d045cff95dd0",
+              "leftValue": "={{ $json.updated }}",
+              "operator": {
+                "operation": "true",
+                "singleValue": true,
+                "type": "boolean"
+              },
+              "rightValue": ""
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          }
+        },
+        "options": {}
+      },
+      "position": [
+        660,
+        0
+      ],
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3
+    },
+    {
+      "id": "2080c06e-fd89-4eab-8eb1-7ac8e60dd501",
+      "name": "Build updated message",
+      "parameters": {
+        "jsCode": "const parsed = $('Parse Slack action').first().json;\nconst status = $json.review_status;\n\nconst icon = status === 'approved' ? ':white_check_mark:' : ':x:';\nconst label = status === 'approved' ? 'Approved' : 'Rejected';\nconst by = parsed.reviewer ? ` by <@${parsed.reviewer}>` : '';\n\n// keep the original content, drop the buttons, append the verdict\nconst blocks = (parsed.original_blocks || []).filter((b) => b.type !== 'actions');\nblocks.push({\n  type: 'section',\n  text: { type: 'mrkdwn', text: `${icon} *${label}*${by}` },\n});\n\nreturn [{ json: { slack_body: { replace_original: true, blocks } } }];"
+      },
+      "position": [
+        880,
+        -96
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "id": "a8693b42-79a7-4b5a-8a6e-ffcb6e180926",
+      "name": "Update Slack message",
+      "parameters": {
+        "jsonBody": "={{ JSON.stringify($json.slack_body) }}",
+        "method": "POST",
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "url": "={{ $('Parse Slack action').first().json.response_url }}"
+      },
+      "position": [
+        1100,
+        -96
+      ],
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2
+    }
+  ],
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
