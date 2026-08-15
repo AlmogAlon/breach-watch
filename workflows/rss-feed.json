@@ -127,6 +127,17 @@
         ]
       ]
     },
+    "create_finding": {
+      "ai_tool": [
+        [
+          {
+            "index": 0,
+            "node": "AI Agent",
+            "type": "ai_tool"
+          }
+        ]
+      ]
+    },
     "exists?": {
       "main": [
         [],
@@ -698,6 +709,31 @@
         144
       ],
       "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7
+    },
+    {
+      "credentials": {
+        "postgres": {
+          "id": "GQ2SoZByCmg7fQjq",
+          "name": "Postgres account 2"
+        }
+      },
+      "id": "a0671bc7-9861-4768-8651-c84fa78329b1",
+      "name": "create_finding",
+      "parameters": {
+        "descriptionType": "manual",
+        "operation": "executeQuery",
+        "options": {
+          "queryReplacement": "={{ [$('Insert article').item.json.id, $fromAI('software_name', 'Name of the software product involved in the breach. Empty string if unknown.', 'string'), $fromAI('company_name', 'Name of the company involved in the breach. Empty string if unknown.', 'string'), $fromAI('domain', 'Official domain of the company. Empty string if unknown. Never guess.', 'string'), $fromAI('evidence', 'Short factual explanation of the actual compromise. Required.', 'string')] }}"
+        },
+        "query": "WITH ins AS (\n    INSERT INTO findings (article_id, software_name, company_name, domain, evidence)\n    VALUES ($1, NULLIF($2, ''), NULLIF($3, ''), NULLIF($4, ''), $5)\n    ON CONFLICT DO NOTHING\n    RETURNING id\n)\nSELECT (SELECT id FROM ins) IS NOT NULL AS created,\n       (SELECT id FROM ins)             AS finding_id;",
+        "toolDescription": "Create exactly one breach finding for the article currently being analysed. Call this only when the article describes a real, confirmed security incident. Do not provide article_id; it is supplied automatically. Returns created=true with a finding_id when the row was inserted, or created=false with finding_id=null when this finding already exists."
+      },
+      "position": [
+        1568,
+        400
+      ],
+      "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.7
     }
   ],
