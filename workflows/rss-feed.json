@@ -194,7 +194,6 @@
   "nodeGroups": [],
   "nodes": [
     {
-      "disabled": true,
       "id": "c9fadb32-244d-48a2-a6f8-586f38ba1dcd",
       "name": "RSS Feed Trigger",
       "parameters": {
@@ -245,6 +244,7 @@
     },
     {
       "alwaysOutputData": true,
+      "disabled": true,
       "id": "37a08ad8-2563-4093-8a6e-dffd407abfb5",
       "name": "When fetching a dataset row",
       "notesInFlow": true,
