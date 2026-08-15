@@ -435,6 +435,18 @@
               "name": "hash",
               "type": "string",
               "value": "={{ $json.link.hash('sha256') }}"
+            },
+            {
+              "id": "a1e6d0c2-raw0-4f11-9c33-000000000001",
+              "name": "raw",
+              "type": "string",
+              "value": "={{ JSON.stringify($json) }}"
+            },
+            {
+              "id": "a1e6d0c2-src0-4f11-9c33-000000000002",
+              "name": "source",
+              "type": "string",
+              "value": "hacker_news"
             }
           ]
         },
@@ -654,9 +666,9 @@
       "parameters": {
         "operation": "executeQuery",
         "options": {
-          "queryReplacement": "={{ [$('formated_json').item.json.link, $('formated_json').item.json.hash, $('formated_json').item.json.title] }}"
+          "queryReplacement": "={{ [$('formated_json').item.json.link, $('formated_json').item.json.hash, $('formated_json').item.json.source, $('formated_json').item.json.raw] }}"
         },
-        "query": "INSERT INTO articles (url, url_hash, title, status)\nVALUES ($1, $2, $3, 'processing')\nON CONFLICT (url_hash) DO NOTHING\nRETURNING id;"
+        "query": "INSERT INTO articles (url, url_hash, source, raw_payload, status)\nVALUES ($1, $2, $3, $4::jsonb, 'processing')\nON CONFLICT (url_hash) DO NOTHING\nRETURNING id;"
       },
       "position": [
         832,
@@ -677,9 +689,9 @@
       "parameters": {
         "operation": "executeQuery",
         "options": {
-          "queryReplacement": "={{ [$('Insert article').item.json.id, $json.has_breach, $('HTTP Request').item.json.text || '', ($('HTTP Request').item.json.text || '').hash('sha256')] }}"
+          "queryReplacement": "={{ [$('Insert article').item.json.id] }}"
         },
-        "query": "UPDATE articles\nSET status       = 'completed',\n    has_breach   = $2::boolean,\n    content      = $3,\n    content_hash = $4,\n    fetched_at   = NOW(),\n    processed_at = NOW()\nWHERE id = $1\nRETURNING id, status, has_breach;"
+        "query": "UPDATE articles\nSET status = 'completed',\n    updated_at = NOW()\nWHERE id = $1\nRETURNING id, status;"
       },
       "position": [
         1856,
