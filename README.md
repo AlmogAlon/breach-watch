@@ -9,14 +9,14 @@ Docker Compose.
 docker-compose.yml   stack definition
 .env.example         required secrets (copy to .env)
 workflows/           exported workflow definitions — the source of truth in git
-sql/                 schema for the Postgres tables the workflows read/write
+db/                  the PostgreSQL schema
 scripts/             bootstrap + export/import round-trip
 files/               bind-mounted into the n8n container at /files
 ```
 
-The workflow polls the Hacker News RSS feed, runs an AI agent over each
-article to flag breach disclosures, writes `articles` / `findings` rows to
-Postgres, dedups on `article:*` keys in Redis, and alerts Slack.
+The workflow polls the Hacker News RSS feed, records each article in Postgres
+with its complete source payload, runs an AI agent over the scraped text to
+flag breach disclosures, and alerts Slack.
 
 ## Setup
 

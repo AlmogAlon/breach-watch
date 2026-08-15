@@ -76,34 +76,16 @@ wait_for "n8n"      'curl -fsS http://localhost:5678/healthz'
 step "Applying schema"
 
 psql_q() { docker compose exec -T postgres psql -U n8n -d n8n -tAc "$1"; }
-psql_f() { docker compose exec -T postgres psql -U n8n -d n8n -v ON_ERROR_STOP=1 -q -f "/sql/$1"; }
 
-# sql/ is not mounted by compose, so stream it in through a temp dir.
-docker compose exec -T postgres sh -c 'mkdir -p /sql'
-for f in articles.sql findings.sql indexes.sql; do
-  docker compose cp "sql/$f" "postgres:/sql/$f" >/dev/null
-done
-
+# db/ is not mounted by compose, so stream the schema in through a temp file.
 if [[ -z "$(psql_q "SELECT to_regclass('public.articles');")" ]]; then
-  psql_f articles.sql; ok "created articles"
+  docker compose cp db/schema.sql postgres:/tmp/schema.sql >/dev/null
+  docker compose exec -T postgres psql -U n8n -d n8n -v ON_ERROR_STOP=1 -q -f /tmp/schema.sql
+  docker compose exec -T postgres rm -f /tmp/schema.sql
+  ok "applied db/schema.sql"
 else
-  warn "articles already exists — skipped"
+  warn "articles already exists — schema skipped"
 fi
-
-if [[ -z "$(psql_q "SELECT to_regclass('public.findings');")" ]]; then
-  psql_f findings.sql; ok "created findings"
-else
-  warn "findings already exists — skipped"
-fi
-
-# indexes.sql is entirely CREATE INDEX IF NOT EXISTS, so it is always safe.
-psql_f indexes.sql; ok "indexes applied"
-
-# NOTE: sql/migrate_status_enum.sql is deliberately NOT run here. It is a
-# historical migration from the old TEXT+CHECK column to article_status, and
-# articles.sql already creates the enum. Running it on a fresh database fails.
-
-docker compose exec -T postgres rm -rf /sql
 
 # ---------------------------------------------------------------- workflows
 if [[ $IMPORT -eq 1 ]]; then
