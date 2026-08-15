@@ -56,6 +56,17 @@
         ]
       ]
     },
+    "Insert article": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Run an Actor",
+            "type": "main"
+          }
+        ]
+      ]
+    },
     "OpenAI Chat Model": {
       "ai_languageModel": [
         [
@@ -122,7 +133,7 @@
         [
           {
             "index": 0,
-            "node": "Run an Actor",
+            "node": "Insert article",
             "type": "main"
           }
         ]
@@ -625,6 +636,29 @@
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.6,
       "webhookId": "80da94b3-56fd-4bde-af1a-053aff85ac6a"
+    },
+    {
+      "credentials": {
+        "postgres": {
+          "id": "GQ2SoZByCmg7fQjq",
+          "name": "Postgres account 2"
+        }
+      },
+      "id": "dec99aeb-e099-4943-a8bb-b515221816ef",
+      "name": "Insert article",
+      "parameters": {
+        "operation": "executeQuery",
+        "options": {
+          "queryReplacement": "={{ [$('formated_json').item.json.link, $('formated_json').item.json.hash, $('formated_json').item.json.title] }}"
+        },
+        "query": "INSERT INTO articles (url, url_hash, title, status)\nVALUES ($1, $2, $3, 'processing')\nON CONFLICT (url_hash) DO NOTHING\nRETURNING id;"
+      },
+      "position": [
+        832,
+        -256
+      ],
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7
     }
   ],
   "pinData": {},
