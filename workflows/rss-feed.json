@@ -162,6 +162,11 @@
             "index": 0,
             "node": "If",
             "type": "main"
+          },
+          {
+            "index": 0,
+            "node": "Complete article",
+            "type": "main"
           }
         ]
       ]
@@ -656,6 +661,29 @@
       "position": [
         832,
         -256
+      ],
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7
+    },
+    {
+      "credentials": {
+        "postgres": {
+          "id": "GQ2SoZByCmg7fQjq",
+          "name": "Postgres account 2"
+        }
+      },
+      "id": "46bb9d64-e1b5-472e-ba97-1f8bd0997cd1",
+      "name": "Complete article",
+      "parameters": {
+        "operation": "executeQuery",
+        "options": {
+          "queryReplacement": "={{ [$('Insert article').item.json.id, $json.has_breach, $('HTTP Request').item.json.text || '', ($('HTTP Request').item.json.text || '').hash('sha256')] }}"
+        },
+        "query": "UPDATE articles\nSET status       = 'completed',\n    has_breach   = $2::boolean,\n    content      = $3,\n    content_hash = $4,\n    fetched_at   = NOW(),\n    processed_at = NOW()\nWHERE id = $1\nRETURNING id, status, has_breach;"
+      },
+      "position": [
+        1856,
+        144
       ],
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.7
