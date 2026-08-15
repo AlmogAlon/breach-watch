@@ -1,0 +1,671 @@
+{
+  "active": true,
+  "activeVersionId": "e94f56ca-387c-4aeb-91ea-fb671ece4aaa",
+  "connections": {
+    "/scrape": {
+      "main": [
+        []
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "redis data1",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Check existence": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "exists?",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Get url content": {
+      "main": [
+        []
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "AI Agent",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Send a message",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "index": 0,
+            "node": "AI Agent",
+            "type": "ai_languageModel"
+          }
+        ]
+      ]
+    },
+    "RSS Feed Trigger": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "formated_json",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Remove all redundant page content": {
+      "main": [
+        []
+      ]
+    },
+    "Run an Actor": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "HTTP Request",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Select rows from a table in Postgres": {
+      "ai_tool": [
+        [
+          {
+            "index": 0,
+            "node": "AI Agent",
+            "type": "ai_tool"
+          }
+        ]
+      ]
+    },
+    "When fetching a dataset row": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "formated_json",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "exists?": {
+      "main": [
+        [],
+        [
+          {
+            "index": 0,
+            "node": "Run an Actor",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "formated_json": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Check existence",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "redis data1": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Save processed to redis",
+            "type": "main"
+          },
+          {
+            "index": 0,
+            "node": "If",
+            "type": "main"
+          }
+        ]
+      ]
+    }
+  },
+  "createdAt": "2026-08-14T17:17:56.157Z",
+  "description": null,
+  "id": "hixbONXMt1wTDzQX",
+  "isArchived": false,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "name": "rss feed",
+  "nodeGroups": [],
+  "nodes": [
+    {
+      "id": "c9fadb32-244d-48a2-a6f8-586f38ba1dcd",
+      "name": "RSS Feed Trigger",
+      "parameters": {
+        "feedUrl": "https://news.ycombinator.com/rss",
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        }
+      },
+      "position": [
+        0,
+        -80
+      ],
+      "type": "n8n-nodes-base.rssFeedReadTrigger",
+      "typeVersion": 1
+    },
+    {
+      "disabled": true,
+      "id": "67a3deee-d3e4-4645-b979-9d745bda3ca3",
+      "name": "Get url content",
+      "parameters": {
+        "options": {},
+        "url": "={{ $('formated_json').item.json.link }}"
+      },
+      "position": [
+        896,
+        112
+      ],
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5
+    },
+    {
+      "disabled": true,
+      "id": "7f74fa09-734b-47c4-8d25-7587f257cba5",
+      "name": "Remove all redundant page content",
+      "parameters": {
+        "jsCode": "const html = $input.first().json.data\n\nlet text = html;\n\n// Remove scripts\ntext = text.replace(/<script\\b[^>]*>[\\s\\S]*?<\\/script>/gi, '');\n\n// Remove styles\ntext = text.replace(/<style\\b[^>]*>[\\s\\S]*?<\\/style>/gi, '');\n\n// Remove HTML comments\ntext = text.replace(/<!--[\\s\\S]*?-->/g, '');\n\n// Remove all remaining HTML tags\ntext = text.replace(/<[^>]+>/g, ' ');\n\n// Clean whitespace\ntext = text.replace(/\\s+/g, ' ').trim();\n\nreturn {\n  json: {\n    text: text\n  }\n};"
+      },
+      "position": [
+        1072,
+        112
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "alwaysOutputData": true,
+      "disabled": true,
+      "id": "37a08ad8-2563-4093-8a6e-dffd407abfb5",
+      "name": "When fetching a dataset row",
+      "notesInFlow": true,
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "cachedResultName": "domain_breaches",
+          "cachedResultUrl": "/projects/NVUAeJXPDXqjjgUJ/datatables/PQYKeoIovociR6CS",
+          "mode": "list",
+          "value": "PQYKeoIovociR6CS"
+        }
+      },
+      "position": [
+        0,
+        112
+      ],
+      "type": "n8n-nodes-base.evaluationTrigger",
+      "typeVersion": 4.7
+    },
+    {
+      "alwaysOutputData": true,
+      "id": "7a0ea937-8a0c-4b76-96c0-e97d51b19107",
+      "name": "AI Agent",
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "options": {},
+        "promptType": "define",
+        "text": "=You are a security breach analysis agent.\n\nYour job is to analyze the provided article\nand determine whether the articale describes a real security breach, hack, compromise, data breach, or unauthorized access involving a software product or software company.\n\nBefore making your final decision, use the Postgres tool to retrieve previous human-reviewed findings.\n\nUse previous findings as examples to understand what humans have historically approved or rejected.\n\nPrevious findings are supporting context only.\nDo not blindly copy previous decisions.\nBase your final decision primarily on the current article.\n\n\nBREACH DETECTION\n\nReturn at most ONE breach.\n\nIf multiple breaches are mentioned, return the single most important breach discussed in the main article.\n\nFor the breach identify:\n\n- software_name\n- company_name\n- official domain\n- brief evidence explaining why this qualifies as a breach + the url\n\nDo not guess missing information.\nIn particular, do not guess the domain.\n\n\nARTICLE ANALYSIS RULES\n\n- Use the Postgres tool before making the final decision.\n- Consider both approved and rejected previous findings.\n- Previous findings are examples, not authoritative facts about the current article.\n- Only analyze the main article.\n- Ignore navigation, comments, related posts, advertisements, subscription text, headers, and footers.\n- Do not classify an article as a breach merely because it discusses cybersecurity.\n- A vulnerability, security research, security update, or theoretical attack is not automatically a breach.\n- There should be evidence of an actual compromise, unauthorized access, hack, data breach, credential theft, or similar real security incident.\n- Do not invent information.\n- Do not return multiple breaches.\n\n\nFINAL OUTPUT\n\nAfter completing any required tool calls, return ONLY a JSON object.\n\nIf a breach was found:\n\n{\n  \"has_breach\": true,\n  \"breach\": {\n    \"software_name\": \"<software name or null>\",\n    \"company_name\": \"<company name or null>\",\n    \"domain\": \"<official domain or null>\",\n    \"evidence\": \"<brief evidence>\"\n  }\n}\n\nIf no breach was found:\n\n{\n  \"has_breach\": false,\n  \"breach\": {}\n}\n\n\nARTICLE\n{{ $json.text }}\n"
+      },
+      "position": [
+        1408,
+        16
+      ],
+      "retryOnFail": true,
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1
+    },
+    {
+      "credentials": {
+        "postgres": {
+          "id": "GQ2SoZByCmg7fQjq",
+          "name": "Postgres account 2"
+        }
+      },
+      "id": "9f2f0ce5-8f32-4f2a-ae49-939d1d7f7cec",
+      "name": "Select rows from a table in Postgres",
+      "parameters": {
+        "operation": "select",
+        "options": {},
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "cachedResultName": "findings",
+          "mode": "list",
+          "value": "findings"
+        }
+      },
+      "position": [
+        1568,
+        208
+      ],
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.7
+    },
+    {
+      "id": "af806d5b-6b7d-44fa-9669-54f4b403f85a",
+      "name": "exists?",
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "c9920d27-6ffc-4a19-aa91-c960cded4bcb",
+              "leftValue": "={{ Object.values($json).every(value => value === null) }}",
+              "operator": {
+                "operation": "false",
+                "singleValue": true,
+                "type": "boolean"
+              },
+              "rightValue": ""
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          }
+        },
+        "options": {}
+      },
+      "position": [
+        672,
+        16
+      ],
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3
+    },
+    {
+      "credentials": {
+        "redis": {
+          "id": "sReDKGskV68n84eB",
+          "name": "Redis account"
+        }
+      },
+      "id": "af527671-aaa1-46b6-af6e-224d291e0bfd",
+      "name": "Save processed to redis",
+      "parameters": {
+        "key": "=article:{{ $('formated_json').item.json.hash }}",
+        "keyType": "hash",
+        "operation": "set",
+        "value": "={{ $json }}"
+      },
+      "position": [
+        2064,
+        -176
+      ],
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1
+    },
+    {
+      "credentials": {
+        "redis": {
+          "id": "sReDKGskV68n84eB",
+          "name": "Redis account"
+        }
+      },
+      "id": "d486b70e-98fe-4f13-a5db-0331ea474024",
+      "name": "Check existence",
+      "parameters": {
+        "key": "=article:{{ $json.hash }}",
+        "operation": "get",
+        "options": {},
+        "propertyName": "="
+      },
+      "position": [
+        448,
+        16
+      ],
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1
+    },
+    {
+      "credentials": {
+        "firecrawlApi": {
+          "id": "69nkOF8ZP72H1boI",
+          "name": "Firecrawl account"
+        }
+      },
+      "disabled": true,
+      "id": "c9280ced-8400-43e9-8cc0-1dd06ed4f03b",
+      "name": "/scrape",
+      "parameters": {
+        "operation": "scrape",
+        "requestOptions": {},
+        "scrapeOptions": {
+          "options": {
+            "formats": {
+              "format": [
+                {}
+              ]
+            },
+            "headers": {}
+          }
+        },
+        "url": "={{ $('formated_json').item.json.link }}"
+      },
+      "position": [
+        1072,
+        -80
+      ],
+      "type": "@mendable/n8n-nodes-firecrawl.firecrawl",
+      "typeVersion": 1
+    },
+    {
+      "id": "067159e2-a0f7-4d5b-a7b4-ecc416c05a4c",
+      "name": "formated_json",
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "932abf18-7175-4855-993a-3341dd73c5e3",
+              "name": "link",
+              "type": "string",
+              "value": "={{ $json.link }}"
+            },
+            {
+              "id": "b4d0f575-6f88-433c-bb3e-c54ae5e34767",
+              "name": "title",
+              "type": "string",
+              "value": "={{ $json.title }}"
+            },
+            {
+              "id": "900037ed-041c-4b4c-8daa-e2823ff1a33f",
+              "name": "hash",
+              "type": "string",
+              "value": "={{ $json.link.hash('sha256') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "position": [
+        224,
+        16
+      ],
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5
+    },
+    {
+      "id": "8822abf3-d09c-431d-a843-c2bc1dd331ee",
+      "name": "redis data1",
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "932abf18-7175-4855-993a-3341dd73c5e3",
+              "name": "link",
+              "type": "string",
+              "value": "={{ $('formated_json').item.json.link }}"
+            },
+            {
+              "id": "b4d0f575-6f88-433c-bb3e-c54ae5e34767",
+              "name": "title",
+              "type": "string",
+              "value": "={{ $('formated_json').item.json.title || '' }}"
+            },
+            {
+              "id": "900037ed-041c-4b4c-8daa-e2823ff1a33f",
+              "name": "hash",
+              "type": "string",
+              "value": "={{ $('formated_json').item.json.hash }}{{ $('formated_json').item.json.hash }}"
+            },
+            {
+              "id": "da343d38-b7e5-4a35-92fb-d5ff6ee9d6a5",
+              "name": "has_breach",
+              "type": "string",
+              "value": "={{ JSON.parse($json.output).has_breach }}"
+            },
+            {
+              "id": "94dc50f9-aa42-4e85-9b0e-69da2dfb6346",
+              "name": "software_name",
+              "type": "string",
+              "value": "={{ JSON.parse($json.output).breach?.software_name || '' }}"
+            },
+            {
+              "id": "e7bddbc5-c352-45ca-a093-9307996081e9",
+              "name": "company_name",
+              "type": "string",
+              "value": "={{ JSON.parse($json.output).breach?.company_name || '' }}"
+            },
+            {
+              "id": "1e5f5e25-9a03-405a-a95e-6d7a24b30cd4",
+              "name": "domain",
+              "type": "string",
+              "value": "={{ JSON.parse($json.output).breach?.domain || '' }}"
+            },
+            {
+              "id": "d7c2b407-aff2-44f4-9e65-d54df6b2da67",
+              "name": "evidence",
+              "type": "string",
+              "value": "={{ JSON.parse($json.output).breach?.evidence || '' }}"
+            }
+          ]
+        },
+        "options": {
+          "ignoreConversionErrors": true
+        }
+      },
+      "position": [
+        1696,
+        -64
+      ],
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5
+    },
+    {
+      "credentials": {
+        "apifyApi": {
+          "id": "ymBQJ6DZBabZiRkF",
+          "name": "Apify account"
+        }
+      },
+      "id": "cfcf000e-73e9-4d51-951e-a810c2cc3dfa",
+      "name": "Run an Actor",
+      "parameters": {
+        "actorId": {
+          "__rl": true,
+          "cachedResultName": "Website Content Crawler (apify/website-content-crawler)",
+          "cachedResultUrl": "https://console.apify.com/actors/aYG0l9s7dbB7j3gbS/input",
+          "mode": "list",
+          "value": "aYG0l9s7dbB7j3gbS"
+        },
+        "actorSource": "store",
+        "customBody": "={\n  \"startUrls\": [\n    {\n      \"url\": \"{{ $('formated_json').item.json.link }}\"\n    }\n  ],\n  \"maxCrawlDepth\": 0,\n  \"maxCrawlPages\": 1\n} "
+      },
+      "position": [
+        992,
+        -256
+      ],
+      "type": "@apify/n8n-nodes-apify.apify",
+      "typeVersion": 1
+    },
+    {
+      "id": "13c7b3e1-e578-4575-9799-640659d0e8bb",
+      "name": "HTTP Request",
+      "parameters": {
+        "options": {},
+        "url": "={{ $json.output.crawlResults }}"
+      },
+      "position": [
+        1152,
+        -256
+      ],
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5
+    },
+    {
+      "credentials": {
+        "openAiApi": {
+          "id": "R1PY6dssb2CdUMIi",
+          "name": "OpenAI account"
+        }
+      },
+      "id": "ba80f370-b818-4753-a205-4acabbfa20eb",
+      "name": "OpenAI Chat Model",
+      "parameters": {
+        "builtInTools": {},
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "options": {}
+      },
+      "position": [
+        1328,
+        224
+      ],
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3
+    },
+    {
+      "id": "649a69d0-85c8-4893-ac94-6047becc9dde",
+      "name": "If",
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "dfbc9f1a-b007-4384-96f5-84f225691adc",
+              "leftValue": "={{ $json.has_breach }}",
+              "operator": {
+                "operation": "equals",
+                "type": "string"
+              },
+              "rightValue": "true"
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          }
+        },
+        "options": {}
+      },
+      "position": [
+        1888,
+        64
+      ],
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3
+    },
+    {
+      "credentials": {
+        "slackApi": {
+          "id": "mAVMNOgJPZV4cTBx",
+          "name": "Slack account"
+        }
+      },
+      "id": "6b8e9856-4a2a-4284-81f7-9e7139ba21fb",
+      "name": "Send a message",
+      "parameters": {
+        "blocksUi": "={{ JSON.stringify({\n  blocks: [\n    {\n      type: \"section\",\n      text: {\n        type: \"mrkdwn\",\n        text:\n          \"🚨 *Potential Security Breach*\\n\\n\" +\n          \"*Software:* \" + ($json.software_name || \"Unknown\") + \"\\n\" +\n          \"*Company:* \" + ($json.company_name || \"Unknown\") + \"\\n\" +\n          \"*Domain:* \" + ($json.domain || \"Unknown\") + \"\\n\" +\n          \"*URL:* \" + ($json.link || \"Unknown\") + \"\\n\\n\" +\n          \"*Evidence:*\\n\" + ($json.evidence || \"No evidence provided\")\n      }\n    },\n    {\n      type: \"actions\",\n      elements: [\n        {\n          type: \"button\",\n          text: {\n            type: \"plain_text\",\n            text: \"Approve\"\n          },\n          style: \"primary\",\n          action_id: \"approve_breach\",\n          value: $json.hash\n        },\n        {\n          type: \"button\",\n          text: {\n            type: \"plain_text\",\n            text: \"Reject\"\n          },\n          style: \"danger\",\n          action_id: \"reject_breach\",\n          value: $json.hash\n        }\n      ]\n    }\n  ]\n}) }}",
+        "channelId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "#hn-leak-alerts"
+        },
+        "messageType": "block",
+        "otherOptions": {},
+        "select": "channel",
+        "text": "Breach notification"
+      },
+      "position": [
+        2128,
+        48
+      ],
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.6,
+      "webhookId": "80da94b3-56fd-4bde-af1a-053aff85ac6a"
+    }
+  ],
+  "pinData": {},
+  "settings": {
+    "availableInMCP": false,
+    "binaryMode": "separate",
+    "executionOrder": "v1"
+  },
+  "shared": [
+    {
+      "createdAt": "2026-08-14T17:17:56.160Z",
+      "project": {
+        "createdAt": "2026-08-12T14:12:56.514Z",
+        "creatorId": "fcbdba0d-5674-4689-b3b0-828cf6f46b63",
+        "customTelemetryTags": [],
+        "description": null,
+        "icon": null,
+        "id": "NVUAeJXPDXqjjgUJ",
+        "name": "Alon Almog <alon6781@gmail.com>",
+        "type": "personal",
+        "updatedAt": "2026-08-12T14:13:27.832Z"
+      },
+      "projectId": "NVUAeJXPDXqjjgUJ",
+      "role": "workflow:owner",
+      "updatedAt": "2026-08-14T17:17:56.160Z",
+      "workflowId": "hixbONXMt1wTDzQX"
+    }
+  ],
+  "sourceWorkflowId": null,
+  "staticData": {
+    "node:RSS Feed Trigger": {
+      "lastItemDate": "2026-08-15T07:31:46.000Z"
+    }
+  },
+  "tags": [],
+  "triggerCount": 1,
+  "updatedAt": "2026-08-15T08:47:38.663Z",
+  "versionCounter": 338,
+  "versionId": "e94f56ca-387c-4aeb-91ea-fb671ece4aaa",
+  "versionMetadata": {
+    "description": "",
+    "name": "Version e94f56ca"
+  }
+}
