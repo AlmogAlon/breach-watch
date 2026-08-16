@@ -26,10 +26,16 @@ def env() -> dict[str, str]:
     return dict(re.findall(r"^(\w+)=(.*)$", text, re.M))
 
 
-def engine():
+def engine(db: str | None = None):
+    """Connect to the stack's Postgres.
+
+    `db` targets a different database on the same server — used when
+    generating or verifying a migration against a scratch database, so the
+    real one is never touched.
+    """
     pw = env()["POSTGRES_PASSWORD"]
     return create_engine(
-        f"postgresql+psycopg://{DB_USER}:{pw}@localhost:{POSTGRES_PORT}/{DB_NAME}",
+        f"postgresql+psycopg://{DB_USER}:{pw}@localhost:{POSTGRES_PORT}/{db or DB_NAME}",
         future=True,
     )
 

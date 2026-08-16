@@ -9,7 +9,8 @@ Docker Compose.
 docker-compose.yml   stack definition
 .env.example         required secrets (copy to .env)
 workflows/           exported workflow definitions — the source of truth in git
-db/                  the PostgreSQL schema
+db/migrations/       Alembic migrations (schema history)
+scripts/models.py    the ORM models — source of truth for the schema
 scripts/             bootstrap + export/import round-trip
 files/               bind-mounted into the n8n container at /files
 ```
@@ -55,15 +56,17 @@ cp .env.example .env      # fill in REDIS_PASSWORD and POSTGRES_PASSWORD
 ./scripts/bootstrap.sh
 ```
 
+`bootstrap.sh` creates `.venv` from `requirements.txt` if it is missing, then
+runs `alembic upgrade head`.
+
 Credentials are not in this repo — they hold live API keys and stay encrypted
 in the `n8n_data` volume. On a fresh install, recreate them in the UI
 (OpenAI, Slack, Apify, Postgres, Redis). Workflow JSON references them by id,
 so either match the old ids or re-link each node after importing.
 
-`bootstrap.sh` does the whole thing: starts the containers, waits until
-Postgres, Redis and n8n actually answer, applies the schema, imports the
-workflows and restores their active flag. Safe to re-run — every step is
-skipped if already done.
+It does the whole thing: starts the containers, waits until Postgres, Redis and
+n8n actually answer, migrates the schema, imports the workflows and restores
+their active flag. Safe to re-run — every step is idempotent.
 
 ```bash
 ./scripts/bootstrap.sh --recreate    # force-recreate containers first
@@ -140,12 +143,30 @@ time, alerts posted before a change to that field keep their old value forever.
 
 ## Known gaps
 
-- No failure path: nothing writes `status='failed'` or `last_error`, so a
-  crashed run leaves a row in `processing` that blocks its own retry via
-  `ON CONFLICT`.
+- Failure handling is partial. An empty scrape is caught and recorded as
+  `failed` with a reason, but an execution that dies for any other reason —
+  or an item silently dropped mid-pipeline — still leaves a row stuck in
+  `processing` that blocks its own retry via `ON CONFLICT`. There is no sweep
+  for stale claims.
 - `findings` records no `model` or `prompt_version`, so a change in accuracy
   cannot be attributed to a prompt change rather than to different articles.
 - Dedup exists in both Redis and Postgres; the two can be cleared
   independently and disagree.
 - `url_hash` is taken over the raw link, so `?utm_source=` variants of one
   article are scraped and billed twice.
+
+## Schema changes
+
+`scripts/models.py` is the source of truth. Edit it, then generate a migration:
+
+```bash
+.venv/bin/alembic revision --autogenerate -m "what changed"
+.venv/bin/alembic upgrade head
+```
+
+Read the generated file before applying it — autogenerate misses some things
+(renames look like drop + add, and it cannot see CHECK constraints added
+outside the models).
+
+`ALEMBIC_DB=<name>` points Alembic at another database on the same server, for
+generating or rehearsing a migration without touching the real one.

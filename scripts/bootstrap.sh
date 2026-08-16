@@ -73,19 +73,18 @@ wait_for "redis"    'docker compose exec -T redis redis-cli -a "$REDIS_PASSWORD"
 wait_for "n8n"      'curl -fsS http://localhost:5678/healthz'
 
 # ---------------------------------------------------------------- schema
-step "Applying schema"
+step "Migrating schema"
 
-psql_q() { docker compose exec -T postgres psql -U n8n -d n8n -tAc "$1"; }
-
-# db/ is not mounted by compose, so stream the schema in through a temp file.
-if [[ -z "$(psql_q "SELECT to_regclass('public.articles');")" ]]; then
-  docker compose cp db/schema.sql postgres:/tmp/schema.sql >/dev/null
-  docker compose exec -T postgres psql -U n8n -d n8n -v ON_ERROR_STOP=1 -q -f /tmp/schema.sql
-  docker compose exec -T postgres rm -f /tmp/schema.sql
-  ok "applied db/schema.sql"
-else
-  warn "articles already exists — schema skipped"
+# Alembic is idempotent: already-applied revisions are skipped, so this is
+# safe on every run. The venv holds alembic and the Postgres driver.
+if [[ ! -x .venv/bin/alembic ]]; then
+  warn "no .venv — creating it"
+  python3 -m venv .venv
+  .venv/bin/pip install --quiet -r requirements.txt
 fi
+
+.venv/bin/alembic upgrade head
+ok "schema at $(.venv/bin/alembic current 2>/dev/null | tail -1)"
 
 # ---------------------------------------------------------------- workflows
 if [[ $IMPORT -eq 1 ]]; then
