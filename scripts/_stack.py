@@ -11,6 +11,7 @@ from pathlib import Path
 
 import redis as redis_lib
 from sqlalchemy import create_engine
+from sqlalchemy.orm import Session, sessionmaker
 
 REPO = Path(__file__).resolve().parent.parent
 
@@ -31,6 +32,10 @@ def engine():
         f"postgresql+psycopg://{DB_USER}:{pw}@localhost:{POSTGRES_PORT}/{DB_NAME}",
         future=True,
     )
+
+
+def session_factory() -> sessionmaker[Session]:
+    return sessionmaker(engine(), expire_on_commit=False)
 
 
 def redis():
