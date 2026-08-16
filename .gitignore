@@ -18,3 +18,7 @@ files/_wf/
 *.sqlite
 *.sqlite-wal
 *.sqlite-shm
+
+# python
+.venv/
+__pycache__/

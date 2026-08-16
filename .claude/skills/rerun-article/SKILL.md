@@ -40,7 +40,7 @@ and quotes survive.
 ## 2. Run it
 
 ```bash
-python3 scripts/rerun-article.py '<link>'
+.venv/bin/python scripts/rerun-article.py '<link>'
 ```
 
 The script does all of this, and always restores the full CSV at the end even
@@ -68,12 +68,19 @@ are worth calling out explicitly:
 
 ## Related
 
-- `python3 scripts/load-articles.py` reloads the whole corpus on its own.
-- `python3 scripts/load-articles.py '<link>'` narrows the table to one row.
+- `.venv/bin/python scripts/load-articles.py` reloads the whole corpus on its own.
+- `.venv/bin/python scripts/load-articles.py '<link>'` narrows the table to one row.
 
 Both stop and restart n8n, because it caches data-table contents in memory.
 
 ## Requirements
+
+Run the scripts with the repo venv (`.venv/bin/python`) — they use SQLAlchemy,
+psycopg and redis-py, pinned in `requirements.txt`. Recreate it with:
+
+```bash
+python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+```
 
 n8n must be up and the `run dataset` workflow active — the script checks both
 and exits with a clear message rather than failing obscurely.
