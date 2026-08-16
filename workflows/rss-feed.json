@@ -50,7 +50,25 @@
         [
           {
             "index": 0,
+            "node": "Has article text?",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Has article text?": {
+      "main": [
+        [
+          {
+            "index": 0,
             "node": "AI Agent",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "Mark failed",
             "type": "main"
           }
         ]
@@ -358,6 +376,7 @@
       },
       "id": "af527671-aaa1-46b6-af6e-224d291e0bfd",
       "name": "Save processed to redis",
+      "onError": "continueRegularOutput",
       "parameters": {
         "key": "=article:{{ $('formated_json').item.json.hash }}",
         "keyType": "hash",
@@ -500,31 +519,31 @@
               "id": "da343d38-b7e5-4a35-92fb-d5ff6ee9d6a5",
               "name": "has_breach",
               "type": "string",
-              "value": "={{ JSON.parse($json.output).has_breach }}"
+              "value": "={{ (() => { try { return JSON.parse($json.output).has_breach ?? ''; } catch (e) { return ''; } })() }}"
             },
             {
               "id": "94dc50f9-aa42-4e85-9b0e-69da2dfb6346",
               "name": "software_name",
               "type": "string",
-              "value": "={{ JSON.parse($json.output).breach?.software_name || '' }}"
+              "value": "={{ (() => { try { return JSON.parse($json.output).breach?.software_name ?? ''; } catch (e) { return ''; } })() }}"
             },
             {
               "id": "e7bddbc5-c352-45ca-a093-9307996081e9",
               "name": "company_name",
               "type": "string",
-              "value": "={{ JSON.parse($json.output).breach?.company_name || '' }}"
+              "value": "={{ (() => { try { return JSON.parse($json.output).breach?.company_name ?? ''; } catch (e) { return ''; } })() }}"
             },
             {
               "id": "1e5f5e25-9a03-405a-a95e-6d7a24b30cd4",
               "name": "domain",
               "type": "string",
-              "value": "={{ JSON.parse($json.output).breach?.domain || '' }}"
+              "value": "={{ (() => { try { return JSON.parse($json.output).breach?.domain ?? ''; } catch (e) { return ''; } })() }}"
             },
             {
               "id": "d7c2b407-aff2-44f4-9e65-d54df6b2da67",
               "name": "evidence",
               "type": "string",
-              "value": "={{ JSON.parse($json.output).breach?.evidence || '' }}"
+              "value": "={{ (() => { try { return JSON.parse($json.output).breach?.evidence ?? ''; } catch (e) { return ''; } })() }}"
             }
           ]
         },
@@ -557,7 +576,8 @@
           "value": "aYG0l9s7dbB7j3gbS"
         },
         "actorSource": "store",
-        "customBody": "={\n  \"startUrls\": [\n    {\n      \"url\": \"{{ $('formated_json').item.json.link }}\"\n    }\n  ],\n  \"crawlerType\": \"cheerio\",\n  \"maxCrawlDepth\": 0,\n  \"maxCrawlPages\": 1\n}"
+        "customBody": "={\n  \"startUrls\": [\n    {\n      \"url\": \"{{ $('formated_json').item.json.link }}\"\n    }\n  ],\n  \"crawlerType\": \"cheerio\",\n  \"maxCrawlDepth\": 0,\n  \"maxCrawlPages\": 1\n}",
+        "timeout": 120
       },
       "position": [
         992,
@@ -567,6 +587,7 @@
       "typeVersion": 1
     },
     {
+      "alwaysOutputData": true,
       "id": "13c7b3e1-e578-4575-9799-640659d0e8bb",
       "name": "HTTP Request",
       "parameters": {
@@ -735,6 +756,63 @@
       "position": [
         1856,
         -256
+      ],
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7
+    },
+    {
+      "id": "d32e04ef-9b9e-46a8-8e79-c3a1dd9db71a",
+      "name": "Has article text?",
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "de0676aa-69d7-4d9a-ad69-57bfb1453a5f",
+              "leftValue": "={{ ($json.text || '').length }}",
+              "operator": {
+                "operation": "gt",
+                "type": "number"
+              },
+              "rightValue": 0
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          }
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "position": [
+        1328,
+        -256
+      ],
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3
+    },
+    {
+      "credentials": {
+        "postgres": {
+          "id": "GQ2SoZByCmg7fQjq",
+          "name": "Postgres account 2"
+        }
+      },
+      "id": "5c90e734-0ed3-4a7d-8e84-319c75793489",
+      "name": "Mark failed",
+      "parameters": {
+        "operation": "executeQuery",
+        "options": {
+          "queryReplacement": "={{ [$('Insert article').item.json.id, 'scrape returned no article text'] }}"
+        },
+        "query": "UPDATE articles\nSET status     = 'failed',\n    last_error = $2,\n    updated_at = NOW()\nWHERE id = $1\nRETURNING id, status, last_error;"
+      },
+      "position": [
+        1504,
+        -80
       ],
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.7
