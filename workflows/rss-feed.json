@@ -270,7 +270,9 @@
       "name": "AI Agent",
       "onError": "continueRegularOutput",
       "parameters": {
-        "options": {},
+        "options": {
+          "maxIterations": 5
+        },
         "promptType": "define",
         "text": "=You are a security breach analysis agent.\n\nYour job is to analyze the provided article, decide whether it describes a real\nsecurity breach involving a software product or software company, and persist\nthe result.\n\n\nREQUIRED SEQUENCE\n\nFollow these steps in order.\n\n1. Read recent human-reviewed findings using the Postgres read tool.\n2. Analyze the current article.\n3. Decide whether it contains a real breach.\n4. If there is NO breach:\n     - return the no-breach JSON and stop\n5. If there IS a breach:\n     - extract at most ONE breach\n     - return the breach JSON\n\nYou do not write to the database. The workflow stores the finding using the\nvalues you return, and links it to the correct article automatically.\n\n\nREADING PREVIOUS FINDINGS\n\nBefore your final decision, use the Postgres read tool.\nDo not retrieve the entire table. Use a query equivalent to:\n\nSELECT software_name, company_name, domain, evidence, review_status\nFROM findings\nWHERE review_status IN ('approved', 'rejected')\nORDER BY reviewed_at DESC\nLIMIT 10;\n\nUse these as few-shot examples of how humans have judged similar articles.\n\n- If similar incidents were REJECTED because they described only vulnerabilities\n  without actual exploitation, treat that as evidence against creating a finding.\n- If similar incidents were APPROVED because they described actual unauthorized\n  access, credential theft, data theft, or compromise, treat that as supporting\n  evidence for creating a finding.\n\nPrevious findings are examples only. They never override the current article.\nDo not copy previous decisions mechanically.\nDo not assume two articles deserve the same decision merely because they mention\nthe same company, product, vulnerability type, or security topic.\n\n\nWHAT COUNTS AS A BREACH\n\nCreate a finding only when there is evidence of an actual incident, such as:\n\n- unauthorized access\n- compromised accounts or systems\n- stolen credentials or tokens\n- successful exploitation resulting in compromise\n- data theft\n- data exposure\n- confirmed intrusion\n- confirmed data breach\n\nDo NOT create a finding when the article only discusses:\n\n- a CVE\n- a vulnerability\n- security research\n- a proof of concept\n- a theoretical attack\n- a patch\n- a security update\n- a misconfiguration without confirmed exploitation\n- security recommendations\n\nWhen uncertain, prefer NOT creating a finding.\n\n\nFINDING FIELDS\n\nWhen creating a finding, extract:\n\n- software_name  (may be null)\n- company_name   (may be null)\n- domain         (may be null)\n- evidence       (required)\n\nDo not guess the domain. If it is not stated in the article, pass an empty string.\nPass an empty string for any other field you cannot determine from the article.\nevidence must be short, factual, and explain the actual compromise.\n\n\nARTICLE ANALYSIS RULES\n\n- Only analyze the main article.\n- Ignore navigation, comments, related posts, advertisements, subscription text,\n  headers, and footers.\n- Do not classify an article as a breach merely because it discusses cybersecurity.\n- Do not invent information.\n- Do not return multiple breaches.\n- If multiple breaches are mentioned, return the single most important breach\n  discussed in the main article.\n\n\nFINAL OUTPUT\n\nAfter completing any required tool calls, return ONLY a JSON object.\n\nIf no breach was found:\n\n{\n  \"has_breach\": false,\n  \"breach\": {}\n}\n\nIf a breach was found:\n\n{\n  \"has_breach\": true,\n  \"breach\": {\n    \"software_name\": \"<software name or empty string>\",\n    \"company_name\": \"<company name or empty string>\",\n    \"domain\": \"<official domain or empty string>\",\n    \"evidence\": \"<brief factual evidence of the actual compromise>\"\n  }\n}\n\n\nARTICLE\n{{ $json.text }}"
       },
@@ -594,7 +596,10 @@
           "mode": "list",
           "value": "gpt-5-mini"
         },
-        "options": {}
+        "options": {
+          "maxRetries": 1,
+          "timeout": 60000
+        }
       },
       "position": [
         1328,
