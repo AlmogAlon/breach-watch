@@ -1,0 +1,120 @@
+{
+  "active": true,
+  "connections": {
+    "Get all dataset rows": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Process each article",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Run via webhook": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Get all dataset rows",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "When clicking Execute": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Get all dataset rows",
+            "type": "main"
+          }
+        ]
+      ]
+    }
+  },
+  "id": "runDataset0000001",
+  "name": "run dataset",
+  "nodes": [
+    {
+      "id": "d16e2077-7f67-4087-a605-9d5148bbc7f3",
+      "name": "When clicking Execute",
+      "parameters": {},
+      "position": [
+        0,
+        0
+      ],
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1
+    },
+    {
+      "id": "a06ad8a4-1148-4445-9e3d-be13ddfee265",
+      "name": "Get all dataset rows",
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "cachedResultName": "domain_breaches",
+          "mode": "list",
+          "value": "PQYKeoIovociR6CS"
+        },
+        "filters": {
+          "conditions": []
+        },
+        "operation": "get",
+        "options": {},
+        "resource": "row",
+        "returnAll": true
+      },
+      "position": [
+        220,
+        0
+      ],
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1
+    },
+    {
+      "id": "6516674e-db7e-4312-9971-123bf4a92080",
+      "name": "Process each article",
+      "parameters": {
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": false
+        },
+        "workflowId": {
+          "__rl": true,
+          "cachedResultName": "rss feed",
+          "mode": "list",
+          "value": "hixbONXMt1wTDzQX"
+        }
+      },
+      "position": [
+        440,
+        0
+      ],
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2
+    },
+    {
+      "id": "7ced36bc-3237-4b4a-adca-77ae56892f29",
+      "name": "Run via webhook",
+      "parameters": {
+        "httpMethod": "POST",
+        "options": {},
+        "path": "run-dataset",
+        "responseMode": "onReceived"
+      },
+      "position": [
+        0,
+        180
+      ],
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "webhookId": "846bf424-8ec6-44b2-832f-d00972885864"
+    }
+  ],
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

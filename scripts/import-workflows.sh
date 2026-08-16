@@ -30,10 +30,12 @@ for f in sorted(glob.glob('workflows/*.json')):
 ")
 
 if [[ -n "$ACTIVE_IDS" ]]; then
-  while read -r id; do
-    docker compose exec -T n8n n8n update:workflow --id="$id" --active=true >/dev/null 2>&1
+  # `docker compose exec` reads stdin, so feeding the loop from a here-string
+  # let it eat the remaining ids and only the first workflow was reactivated.
+  for id in $ACTIVE_IDS; do
+    docker compose exec -T n8n n8n update:workflow --id="$id" --active=true >/dev/null 2>&1 </dev/null
     echo "reactivated $id"
-  done <<< "$ACTIVE_IDS"
+  done
   # Activation only takes effect on restart; this is what registers triggers.
   docker compose restart n8n >/dev/null
   echo "restarted n8n to register triggers"

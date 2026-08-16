@@ -145,6 +145,17 @@
         ]
       ]
     },
+    "When called by runner": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "formated_json",
+            "type": "main"
+          }
+        ]
+      ]
+    },
     "When fetching a dataset row": {
       "main": [
         [
@@ -577,6 +588,7 @@
         },
         "actorSource": "store",
         "customBody": "={\n  \"startUrls\": [\n    {\n      \"url\": \"{{ $('formated_json').item.json.link }}\"\n    }\n  ],\n  \"crawlerType\": \"cheerio\",\n  \"maxCrawlDepth\": 0,\n  \"maxCrawlPages\": 1\n}",
+        "memory": 512,
         "timeout": 120
       },
       "position": [
@@ -816,6 +828,19 @@
       ],
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.7
+    },
+    {
+      "id": "d06bde8f-e38d-40f9-b698-1d8aeadb5aca",
+      "name": "When called by runner",
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "position": [
+        -16,
+        208
+      ],
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1
     }
   ],
   "pinData": {},
